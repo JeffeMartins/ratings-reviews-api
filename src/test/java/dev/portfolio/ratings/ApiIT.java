@@ -131,11 +131,36 @@ class ApiIT {
                 .contentType("application/json")
                 .content(body))
         .andExpect(status().isForbidden());
+    var response =
+        mvc.perform(
+                post("/api/v1/products")
+                    .with(httpBasic("admin", "test-admin-password-strong"))
+                    .cookie(csrfCookie)
+                    .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                    .contentType("application/json")
+                    .content(body))
+            .andExpect(status().isCreated())
+            .andReturn()
+            .getResponse();
+    var rotatedCookie =
+        java.util.Arrays.stream(response.getCookies())
+            .filter(c -> c.getName().equals("XSRF-TOKEN") && !c.getValue().isBlank())
+            .reduce((first, last) -> last)
+            .orElseThrow();
+    assertThat(rotatedCookie.getValue()).isNotEqualTo(csrfCookie.getValue());
     mvc.perform(
             post("/api/v1/products")
                 .with(httpBasic("admin", "test-admin-password-strong"))
-                .cookie(csrfCookie)
+                .cookie(rotatedCookie)
                 .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                .contentType("application/json")
+                .content(body))
+        .andExpect(status().isForbidden());
+    mvc.perform(
+            post("/api/v1/products")
+                .with(httpBasic("admin", "test-admin-password-strong"))
+                .cookie(rotatedCookie)
+                .header("X-XSRF-TOKEN", rotatedCookie.getValue())
                 .contentType("application/json")
                 .content(body))
         .andExpect(status().isCreated());

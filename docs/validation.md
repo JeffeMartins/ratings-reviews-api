@@ -9,7 +9,7 @@ Execução em 28/10/2026, Windows com Docker Desktop (engine Linux), JDK Temurin
 - 7 testes unitários: domínio da nota, falha de cache/circuit breaker, contrato HTTP do provedor de IA e estados da análise.
 - 3 testes de integração com PostgreSQL 17 e Redis 7.4 reais via Testcontainers: fluxo de avaliação/cache, autorização, validação, OpenAPI e protocolo CSRF com cookie/header.
 - 0 falhas, 0 erros, 0 testes ignorados.
-- JaCoCo: **256/292 linhas executadas (87,7%)**, incluindo unitários e integração. Sem meta artificial de cobertura total; relatório gerado em `target/site/jacoco/index.html`.
+- JaCoCo: **258/294 linhas executadas (87,8%)**, incluindo unitários e integração. Sem meta artificial de cobertura total; relatório gerado em `target/site/jacoco/index.html`.
 - Imagem de runtime construída pelo Dockerfile multi-stage com JDK 21 no build e JRE 21 no runtime.
 
 O teste de IA utiliza servidor HTTP local e chave fictícia. Não foi feita chamada paga à OpenAI. O comportamento com uma chave/modelo reais depende da conta e deve ser validado após a configuração.
@@ -22,13 +22,13 @@ Cenário `scripts/load.js`, k6 0.57.0, 40 s, rampa de até 10 usuários virtuais
 
 | Indicador | Resultado |
 | --- | --- |
-| Requisições | 1.066 |
-| Taxa média durante a rampa | 26,61 req/s |
+| Requisições | 1.065 |
+| Taxa média durante a rampa | 26,60 req/s |
 | Erros HTTP | 0% |
-| Latência média HTTP | 6,48 ms |
-| p95 HTTP | 8,80 ms |
-| Maior latência HTTP | 22,39 ms |
+| Latência média HTTP | 6,62 ms |
+| p95 HTTP | 8,89 ms |
+| Maior latência HTTP | 442,79 ms |
 
-Teste local com dataset mínimo, HTTP sem TLS e cache favorável. Não mede capacidade máxima, segurança, comportamento com muitas chaves, dados volumosos ou concorrência de escrita. A taxa é determinada pelo cenário e suas pausas, não é o limite de throughput da API. As metas configuradas de p95 < 500 ms e erros < 1% foram atendidas nesta execução.
+Teste repetido após habilitar CSRF, com dataset mínimo, HTTP sem TLS e cache favorável. Não mede capacidade máxima, segurança, comportamento com muitas chaves, dados volumosos ou concorrência de escrita. A taxa é determinada pelo cenário e suas pausas, não é o limite de throughput da API. As metas configuradas de p95 < 500 ms e erros < 1% foram atendidas nesta execução.
 
 Os resultados são uma fotografia desta execução. A CI deve ser consultada para validar o commit atual. Não confunda metas ou resultados deste teste curto com um SLA de produção.

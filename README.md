@@ -70,7 +70,7 @@ Resumo:
 
 Erros de aplicação seguem `ProblemDetail` (`application/problem+json`). Validação retorna 400; credenciais ausentes/inválidas, 401; acesso proibido ou token CSRF ausente/inválido, 403; recurso ausente, 404; avaliação duplicada, 409; orçamento global excedido, 429 com `Retry-After`. A verificação CSRF pode retornar 403 antes da autenticação em escritas sem token. Respostas de autenticação/autorização são controladas pelo Spring Security e podem ter formato diferente. Stack traces e detalhes de SQL não são expostos.
 
-Clientes de escrita devem manter cookies entre chamadas: primeiro `GET /api/v1/csrf`, depois enviar o valor do cookie `XSRF-TOKEN` no header `X-XSRF-TOKEN`, além da autenticação Basic e do mesmo cookie. O script smoke implementa esse fluxo. O handler preserva tokens mascarados nos atributos do request e aceita o token do cookie em headers JavaScript, seguindo o [padrão de integração do Spring Security](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html).
+Clientes de escrita devem manter cookies entre chamadas: primeiro `GET /api/v1/csrf`, depois enviar o valor atual do cookie `XSRF-TOKEN` no header `X-XSRF-TOKEN`, além da autenticação Basic e do mesmo cookie. Leia o cookie novamente antes de cada chamada: a autenticação pode rotacionar o token. O script smoke implementa esse fluxo. O handler preserva tokens mascarados nos atributos do request e aceita o token do cookie em headers JavaScript, seguindo o [padrão de integração do Spring Security](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html).
 
 ## Arquitetura
 
@@ -184,7 +184,7 @@ Há um cenário k6 de 40 segundos para o resumo de um produto existente. No Powe
 docker run --rm -i -e PRODUCT_ID=UUID_DO_PRODUTO -v "${PWD}/scripts:/scripts:ro" grafana/k6:0.57.0 run /scripts/load.js
 ```
 
-O script usa `host.docker.internal`; no Linux, adicione `--add-host=host.docker.internal:host-gateway`. Metas do cenário: p95 abaixo de 500 ms e erros abaixo de 1%. Uma execução local curta atingiu p95 de 8,80 ms, com 1.066 requisições e zero erros; [dataset, hardware e limitações](docs/validation.md) estão documentados. Esse resultado não é garantia de capacidade. Veja [operação e diagnóstico](docs/operations.md) para interpretar cache, falhas e saúde.
+O script usa `host.docker.internal`; no Linux, adicione `--add-host=host.docker.internal:host-gateway`. Metas do cenário: p95 abaixo de 500 ms e erros abaixo de 1%. Uma execução local curta atingiu p95 de 8,89 ms, com 1.065 requisições e zero erros; [dataset, hardware e limitações](docs/validation.md) estão documentados. Esse resultado não é garantia de capacidade. Veja [operação e diagnóstico](docs/operations.md) para interpretar cache, falhas e saúde.
 
 ```powershell
 docker compose ps
