@@ -72,3 +72,7 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     persist-authorization: false
+    csrf:
+      enabled: true
+      cookie-name: XSRF-TOKEN
+      header-name: X-XSRF-TOKEN

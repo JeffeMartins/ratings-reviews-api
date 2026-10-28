@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.*;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 @Configuration
 public class SecurityConfig {
@@ -33,7 +34,10 @@ public class SecurityConfig {
 
   @Bean
   SecurityFilterChain security(HttpSecurity http) throws Exception {
-    return http.csrf(csrf -> csrf.disable())
+    return http.csrf(
+            csrf ->
+                csrf.csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .csrfTokenRequestHandler(new BrowserCsrfHandler()))
         .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .requestCache(c -> c.disable())
         .headers(h -> h.frameOptions(f -> f.deny()).contentTypeOptions(Customizer.withDefaults()))
@@ -46,6 +50,8 @@ public class SecurityConfig {
                         "/actuator/health",
                         "/actuator/health/liveness",
                         "/actuator/health/readiness")
+                    .permitAll()
+                    .requestMatchers(HttpMethod.GET, "/api/v1/csrf")
                     .permitAll()
                     .requestMatchers("/actuator/**")
                     .hasRole("ADMIN")

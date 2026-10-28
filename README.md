@@ -28,7 +28,7 @@ O primeiro build baixa imagens e dependências. O script de configuração gera 
 | Readiness | http://localhost:8080/actuator/health/readiness |
 | Métricas Prometheus | http://localhost:8080/actuator/prometheus (admin) |
 
-No Swagger, clique em **Authorize**. Use `admin` e o valor de `ADMIN_PASSWORD` do seu `.env` para criar produtos/analisar; use `reviewer` e `REVIEWER_PASSWORD` para avaliar. As leituras são públicas. O Swagger apresenta o esquema Basic globalmente por conveniência; a tabela abaixo descreve a autorização efetiva.
+No Swagger, clique em **Authorize**. Use `admin` e o valor de `ADMIN_PASSWORD` do seu `.env` para criar produtos/analisar; use `reviewer` e `REVIEWER_PASSWORD` para avaliar. Execute `GET /api/v1/csrf` para inicializar o cookie de proteção; o Swagger envia o header CSRF nas escritas automaticamente. As leituras são públicas. O Swagger apresenta o esquema Basic globalmente por conveniência; a tabela abaixo descreve a autorização efetiva.
 
 Linux/macOS: copie `.env.example` para `.env`, substitua as três senhas por valores aleatórios de pelo menos 16 caracteres, execute `docker compose up -d --build --wait` e use Swagger ou curl. Os scripts `.ps1` também funcionam com PowerShell 7.
 
@@ -38,6 +38,7 @@ Base: `/api/v1`. IDs são UUIDs. Datas em UTC/ISO-8601. Coleções retornam `con
 
 | Método | Rota | Permissão | Comportamento |
 | --- | --- | --- | --- |
+| GET | `/csrf` | Público | Inicializa o cookie CSRF para operações de escrita |
 | GET | `/products?page=0&size=20` | Público | Lista produtos, ordem de criação decrescente |
 | POST | `/products` | ADMIN | Cria produto; 201 e Location |
 | GET | `/products/{id}` | Público | Consulta produto |
@@ -67,7 +68,9 @@ Resumo:
 {"productId":"00000000-0000-0000-0000-000000000001","totalReviews":12,"averageRating":4.58}
 ```
 
-Erros de aplicação seguem `ProblemDetail` (`application/problem+json`). Validação retorna 400; credenciais ausentes/inválidas, 401; acesso proibido, 403; recurso ausente, 404; avaliação duplicada, 409; orçamento global excedido, 429 com `Retry-After`. Respostas de autenticação/autorização são controladas pelo Spring Security e podem ter formato diferente. Stack traces e detalhes de SQL não são expostos.
+Erros de aplicação seguem `ProblemDetail` (`application/problem+json`). Validação retorna 400; credenciais ausentes/inválidas, 401; acesso proibido ou token CSRF ausente/inválido, 403; recurso ausente, 404; avaliação duplicada, 409; orçamento global excedido, 429 com `Retry-After`. A verificação CSRF pode retornar 403 antes da autenticação em escritas sem token. Respostas de autenticação/autorização são controladas pelo Spring Security e podem ter formato diferente. Stack traces e detalhes de SQL não são expostos.
+
+Clientes de escrita devem manter cookies entre chamadas: primeiro `GET /api/v1/csrf`, depois enviar o valor do cookie `XSRF-TOKEN` no header `X-XSRF-TOKEN`, além da autenticação Basic e do mesmo cookie. O script smoke implementa esse fluxo. O handler preserva tokens mascarados nos atributos do request e aceita o token do cookie em headers JavaScript, seguindo o [padrão de integração do Spring Security](https://docs.spring.io/spring-security/reference/servlet/exploits/csrf.html).
 
 ## Arquitetura
 
@@ -143,6 +146,7 @@ Esses estados retornam HTTP 200 para permitir degradação explícita no cliente
 ## Segurança e limites
 
 - Spring Security, BCrypt, autorização por papel e checagem do autor na exclusão.
+- Proteção CSRF por cookie e header nas operações de escrita, integrada ao Swagger e ao smoke.
 - Credenciais locais aleatórias e obrigatórias; `.env` e ferramentas locais ignorados pelo Git e pelo build Docker.
 - JPA usa parâmetros; DTOs limitam campos e paginação; constraints também existem no PostgreSQL.
 - API com orçamento global de **300 requisições/s por instância**, sem bypass por User-Agent. Não é rate limit por cliente.
@@ -150,7 +154,7 @@ Esses estados retornam HTTP 200 para permitir degradação explícita no cliente
 - Runtime sem root, filesystem read-only, capabilities removidas e limites de memória no Compose.
 - PostgreSQL, Redis e API publicados apenas em `127.0.0.1` no host.
 
-Este ambiente usa **dois usuários em memória e HTTP Basic para demonstração local**. Antes de expor à internet: substitua por OIDC/OAuth2 (issuer confiável e usuários reais), use TLS, proteção CSRF se houver autenticação automática de browser/cookies, limites distribuídos e de tamanho de corpo no gateway, secret manager, redes privadas e processos de backup/restauração. CSRF está desligado para este contrato de demonstração; não use o perfil Basic como base de autenticação de uma aplicação web pública. CORS não está liberado globalmente.
+Este ambiente usa **dois usuários em memória e HTTP Basic para demonstração local**. Antes de expor à internet: substitua por OIDC/OAuth2 (issuer confiável e usuários reais), use TLS, limites distribuídos e de tamanho de corpo no gateway, secret manager, redes privadas e processos de backup/restauração. Preserve a proteção CSRF quando houver autenticação automática de browser/cookies; não use o perfil Basic como base de autenticação de uma aplicação web pública. CORS não está liberado globalmente.
 
 ## Testes e qualidade
 

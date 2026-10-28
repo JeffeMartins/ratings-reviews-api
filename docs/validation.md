@@ -7,9 +7,9 @@ Execução em 28/10/2026, Windows com Docker Desktop (engine Linux), JDK Temurin
 `mvn spotless:apply verify` concluiu com **BUILD SUCCESS**:
 
 - 7 testes unitários: domínio da nota, falha de cache/circuit breaker, contrato HTTP do provedor de IA e estados da análise.
-- 2 testes de integração com PostgreSQL 17 e Redis 7.4 reais via Testcontainers: fluxo de avaliação/cache, autorização, validação e OpenAPI.
+- 3 testes de integração com PostgreSQL 17 e Redis 7.4 reais via Testcontainers: fluxo de avaliação/cache, autorização, validação, OpenAPI e protocolo CSRF com cookie/header.
 - 0 falhas, 0 erros, 0 testes ignorados.
-- JaCoCo: **242/278 linhas executadas (87,1%)**, incluindo unitários e integração. Sem meta artificial de cobertura total; relatório gerado em `target/site/jacoco/index.html`.
+- JaCoCo: **256/292 linhas executadas (87,7%)**, incluindo unitários e integração. Sem meta artificial de cobertura total; relatório gerado em `target/site/jacoco/index.html`.
 - Imagem de runtime construída pelo Dockerfile multi-stage com JDK 21 no build e JRE 21 no runtime.
 
 O teste de IA utiliza servidor HTTP local e chave fictícia. Não foi feita chamada paga à OpenAI. O comportamento com uma chave/modelo reais depende da conta e deve ser validado após a configuração.

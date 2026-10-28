@@ -24,6 +24,8 @@ O prompt delimita reviews como dados, sem ferramentas externas. Respostas contin
 
 Usuários em memória com senhas aleatórias tornam o clone fácil de demonstrar. Esse mecanismo não oferece cadastro, recuperação de senha, revogação de identidade nem segurança suficiente para exposição pública. A evolução prevista é Resource Server OAuth2/OIDC validando issuer, audience e scopes, com testes de autorização e TLS no gateway.
 
+HTTP Basic pode ser enviado automaticamente pelo browser, portanto stateless não elimina CSRF. Escritas exigem cookie `XSRF-TOKEN` e header `X-XSRF-TOKEN`. O handler aceita o token plain vindo do cookie em headers JavaScript e mantém a representação mascarada em atributos do request; Swagger está configurado para esse protocolo. O cookie é legível por JavaScript para permitir essa integração e não contém uma credencial de identidade.
+
 O rate limit global usa memória limitada e não armazena IPs em um mapa crescente. Não distribui quotas entre réplicas e não diferencia clientes. Um gateway deve impor quotas por identidade e limites de corpo, com proteção a brute force antes da verificação BCrypt.
 
 ## 5. Evolução orientada a medições

@@ -50,6 +50,7 @@ class ApiIT {
     var response =
         mvc.perform(
                 post("/api/v1/products")
+                    .with(csrf())
                     .with(httpBasic("admin", "test-admin-password-strong"))
                     .contentType("application/json")
                     .content("{\"name\":\"Headphone\",\"description\":\"Wireless headphones\"}"))
@@ -76,6 +77,7 @@ class ApiIT {
     var created =
         mvc.perform(
                 post(path + "/reviews")
+                    .with(csrf())
                     .with(user("alice").roles("REVIEWER"))
                     .contentType("application/json")
                     .content(reviewBody(5)))
@@ -89,29 +91,70 @@ class ApiIT {
         .andExpect(jsonPath("$.averageRating").value(5.0));
     mvc.perform(
             post(path + "/reviews")
+                .with(csrf())
                 .with(user("alice").roles("REVIEWER"))
                 .contentType("application/json")
                 .content(reviewBody(4)))
         .andExpect(status().isConflict());
-    mvc.perform(delete(path + "/reviews/" + reviewId).with(user("bob").roles("REVIEWER")))
+    mvc.perform(
+            delete(path + "/reviews/" + reviewId).with(csrf()).with(user("bob").roles("REVIEWER")))
         .andExpect(status().isForbidden());
-    mvc.perform(delete(path + "/reviews/" + reviewId).with(user("alice").roles("REVIEWER")))
+    mvc.perform(
+            delete(path + "/reviews/" + reviewId)
+                .with(csrf())
+                .with(user("alice").roles("REVIEWER")))
         .andExpect(status().isNoContent());
     mvc.perform(get(path + "/summary")).andExpect(jsonPath("$.totalReviews").value(0));
   }
 
   @Test
+  void cookieAndHeaderAreRequiredForWriteRequests() throws Exception {
+    String body = "{\"name\":\"CSRF protected product\",\"description\":\"Demo\"}";
+    mvc.perform(
+            post("/api/v1/products")
+                .with(httpBasic("admin", "test-admin-password-strong"))
+                .contentType("application/json")
+                .content(body))
+        .andExpect(status().isForbidden());
+    var csrfCookie =
+        mvc.perform(get("/api/v1/csrf"))
+            .andExpect(status().isOk())
+            .andExpect(cookie().exists("XSRF-TOKEN"))
+            .andReturn()
+            .getResponse()
+            .getCookie("XSRF-TOKEN");
+    mvc.perform(
+            post("/api/v1/products")
+                .with(httpBasic("admin", "test-admin-password-strong"))
+                .cookie(csrfCookie)
+                .header("X-XSRF-TOKEN", "invalid-token")
+                .contentType("application/json")
+                .content(body))
+        .andExpect(status().isForbidden());
+    mvc.perform(
+            post("/api/v1/products")
+                .with(httpBasic("admin", "test-admin-password-strong"))
+                .cookie(csrfCookie)
+                .header("X-XSRF-TOKEN", csrfCookie.getValue())
+                .contentType("application/json")
+                .content(body))
+        .andExpect(status().isCreated());
+  }
+
+  @Test
   void authorizationValidationAndDocs() throws Exception {
-    mvc.perform(post("/api/v1/products").contentType("application/json").content("{}"))
+    mvc.perform(post("/api/v1/products").with(csrf()).contentType("application/json").content("{}"))
         .andExpect(status().isUnauthorized());
     mvc.perform(
             post("/api/v1/products")
+                .with(csrf())
                 .with(user("reviewer").roles("REVIEWER"))
                 .contentType("application/json")
                 .content("{}"))
         .andExpect(status().isForbidden());
     mvc.perform(
             post("/api/v1/products")
+                .with(csrf())
                 .with(user("admin").roles("ADMIN"))
                 .contentType("application/json")
                 .content("{\"name\":\" \",\"description\":\"x\"}"))
@@ -126,11 +169,15 @@ class ApiIT {
     String id = createProduct();
     mvc.perform(
             post("/api/v1/products/" + id + "/reviews")
+                .with(csrf())
                 .with(user("alice").roles("REVIEWER"))
                 .contentType("application/json")
                 .content(reviewBody(6)))
         .andExpect(status().isBadRequest());
-    mvc.perform(post("/api/v1/products/" + id + "/analysis").with(user("admin").roles("ADMIN")))
+    mvc.perform(
+            post("/api/v1/products/" + id + "/analysis")
+                .with(csrf())
+                .with(user("admin").roles("ADMIN")))
         .andExpect(status().isOk())
         .andExpect(jsonPath("$.status").value("DISABLED"));
   }
