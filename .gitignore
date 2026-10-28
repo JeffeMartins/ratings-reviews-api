@@ -1,0 +1,11 @@
+target/
+.tools/
+.env
+*.log
+.idea/
+.vscode/
+*.iml
+.aws/
+*.pem
+*.key
+!.env.example
