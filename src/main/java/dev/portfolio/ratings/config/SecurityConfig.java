@@ -61,7 +61,10 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/api/v1/products", "/api/v1/products/**")
                     .permitAll()
                     .requestMatchers(
-                        HttpMethod.POST, "/api/v1/products", "/api/v1/products/*/analysis")
+                        HttpMethod.POST,
+                        "/api/v1/products",
+                        "/api/v1/products/*/analysis",
+                        "/api/v1/products/by-sku/*/analysis")
                     .hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/api/v1/products/*/reviews")
                     .hasRole("REVIEWER")

@@ -19,13 +19,13 @@ public class ExceptionHandlerAdvice extends ResponseEntityExceptionHandler {
   ProblemDetail conflict() {
     return ProblemDetail.forStatusAndDetail(
         HttpStatus.CONFLICT,
-        "A review already exists for this user and product, or the operation violates a data constraint.");
+        "A product with this SKU or a review for this user/product already exists, or another data constraint was violated.");
   }
 
   @ExceptionHandler({ConstraintViolationException.class, MethodArgumentTypeMismatchException.class})
   ProblemDetail invalid(Exception ex) {
     return ProblemDetail.forStatusAndDetail(
-        HttpStatus.BAD_REQUEST, "Invalid parameter. Check UUIDs, page and size limits.");
+        HttpStatus.BAD_REQUEST, "Invalid parameter. Check SKU, UUIDs, page and size limits.");
   }
 
   @Override

@@ -41,6 +41,8 @@ Base: `/api/v1`. IDs são UUIDs. Datas em UTC/ISO-8601. Coleções retornam `con
 | GET | `/csrf` | Público | Inicializa o cookie CSRF para operações de escrita |
 | GET | `/products?page=0&size=20` | Público | Lista produtos, ordem de criação decrescente |
 | POST | `/products` | ADMIN | Cria produto; 201 e Location |
+| GET | `/products/by-sku/{sku}` | Público | Produto, média de estrelas, total e avaliações/comentários paginados |
+| POST | `/products/by-sku/{sku}/analysis` | ADMIN | Solicita análise opcional por SKU |
 | GET | `/products/{id}` | Público | Consulta produto |
 | GET | `/products/{id}/reviews` | Público | Avaliações paginadas, mais recentes primeiro |
 | POST | `/products/{id}/reviews` | REVIEWER | Cria avaliação com autor obtido da identidade autenticada |
@@ -53,7 +55,7 @@ Regras: notas entre 1 e 5; nome/título até 160 caracteres; descrição/texto a
 Exemplo de criação de produto:
 
 ```json
-{"name":"Headphone Bluetooth","description":"Fone sem fio para trabalho e música"}
+{"sku":"FONE-BT-001","name":"Headphone Bluetooth","description":"Fone sem fio para trabalho e música"}
 ```
 
 Exemplo de avaliação:
@@ -67,6 +69,19 @@ Resumo:
 ```json
 {"productId":"00000000-0000-0000-0000-000000000001","totalReviews":12,"averageRating":4.58}
 ```
+
+### Demonstração pronta por SKU
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/seed-demo.ps1
+curl.exe -sS "http://localhost:8080/api/v1/products/by-sku/FONE-BT-001"
+```
+
+O seed usa curl e as credenciais locais do `.env` para criar um produto fictício com duas avaliações (5 e 4 estrelas), média **4,5/5** e comentários em `reviews.content[].content`. Pode ser repetido sem duplicar o SKU ou as avaliações desses autores. Ele também consulta a análise: retorna `DISABLED` sem configuração de IA e pode consumir créditos se a integração estiver habilitada.
+
+Na consulta por SKU, `product` contém o cadastro, `summary` contém `totalReviews` e `averageRating`, e `reviews` contém a página de avaliações (`rating`, `title`, `content`, `author`). `page` e `size` têm os mesmos limites das outras consultas. Os componentes podem refletir commits concorrentes diferentes; esse endpoint não promete um snapshot consistente entre resumo e lista, pois o resumo utiliza cache.
+
+SKU aceita de 1 a 64 caracteres, iniciando com letra maiúscula ou número e contendo letras maiúsculas, números, ponto, hífen ou underscore. É único e pode ser enviado na criação; quando ausente, é gerado como `PRD-{UUID}`. A migration V2 atribui esse padrão aos produtos existentes sem alterar seus IDs. As rotas por UUID continuam disponíveis.
 
 Erros de aplicação seguem `ProblemDetail` (`application/problem+json`). Validação retorna 400; credenciais ausentes/inválidas, 401; acesso proibido ou token CSRF ausente/inválido, 403; recurso ausente, 404; avaliação duplicada, 409; orçamento global excedido, 429 com `Retry-After`. A verificação CSRF pode retornar 403 antes da autenticação em escritas sem token. Respostas de autenticação/autorização são controladas pelo Spring Security e podem ter formato diferente. Stack traces e detalhes de SQL não são expostos.
 

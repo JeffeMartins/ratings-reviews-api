@@ -9,6 +9,9 @@ import java.util.UUID;
 public class Product {
   @Id private UUID id;
 
+  @Column(nullable = false, unique = true, length = 64)
+  private String sku;
+
   @Column(nullable = false, length = 160)
   private String name;
 
@@ -21,7 +24,12 @@ public class Product {
   protected Product() {}
 
   public Product(String name, String description) {
+    this(null, name, description);
+  }
+
+  public Product(String sku, String name, String description) {
     this.id = UUID.randomUUID();
+    this.sku = sku == null ? "PRD-" + id.toString().toUpperCase(java.util.Locale.ROOT) : sku;
     this.name = name;
     this.description = description;
     this.createdAt = Instant.now();
@@ -29,6 +37,10 @@ public class Product {
 
   public UUID getId() {
     return id;
+  }
+
+  public String getSku() {
+    return sku;
   }
 
   public String getName() {

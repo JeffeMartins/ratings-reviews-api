@@ -34,10 +34,20 @@ public class CatalogService {
     return products.findById(id).orElseThrow(ApiException::notFound);
   }
 
+  public Product requireSku(String sku) {
+    return products.findBySku(sku).orElseThrow(ApiException::notFound);
+  }
+
+  public ProductOverview overview(String sku, int page, int size) {
+    var product = requireSku(sku);
+    return new ProductOverview(
+        ProductView.of(product), summary(product.getId()), reviews(product.getId(), page, size));
+  }
+
   @Transactional
   public ProductView create(CreateProduct input) {
     return ProductView.of(
-        products.save(new Product(input.name().strip(), input.description().strip())));
+        products.save(new Product(input.sku(), input.name().strip(), input.description().strip())));
   }
 
   public PageView<ProductView> list(int page, int size) {

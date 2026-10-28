@@ -10,16 +10,20 @@ public final class Models {
   private Models() {}
 
   public record CreateProduct(
-      @NotBlank @Size(max = 160) String name, @NotBlank @Size(max = 2000) String description) {}
+      @Pattern(regexp = "[A-Z0-9][A-Z0-9._-]{0,63}") String sku,
+      @NotBlank @Size(max = 160) String name,
+      @NotBlank @Size(max = 2000) String description) {}
 
   public record CreateReview(
       @Min(1) @Max(5) int rating,
       @NotBlank @Size(max = 160) String title,
       @NotBlank @Size(max = 2000) String content) {}
 
-  public record ProductView(UUID id, String name, String description, Instant createdAt) {
+  public record ProductView(
+      UUID id, String sku, String name, String description, Instant createdAt) {
     public static ProductView of(Product p) {
-      return new ProductView(p.getId(), p.getName(), p.getDescription(), p.getCreatedAt());
+      return new ProductView(
+          p.getId(), p.getSku(), p.getName(), p.getDescription(), p.getCreatedAt());
     }
   }
 
@@ -47,6 +51,9 @@ public final class Models {
       List<T> content, int page, int size, long totalElements, int totalPages) {}
 
   public record Summary(UUID productId, long totalReviews, double averageRating) {}
+
+  public record ProductOverview(
+      ProductView product, Summary summary, PageView<ReviewView> reviews) {}
 
   public record Analysis(
       UUID productId, String status, String text, int sampleSize, Instant generatedAt) {}

@@ -45,6 +45,22 @@ public class ProductController {
     return ProductView.of(catalog.require(id));
   }
 
+  @GetMapping("/by-sku/{sku}")
+  @Operation(summary = "Find product by SKU with aggregate stars and paginated reviews/comments")
+  public ProductOverview bySku(
+      @PathVariable @Pattern(regexp = "[A-Z0-9][A-Z0-9._-]{0,63}") String sku,
+      @RequestParam(defaultValue = "0") @Min(0) @Max(10000) int page,
+      @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
+    return catalog.overview(sku, page, size);
+  }
+
+  @PostMapping("/by-sku/{sku}/analysis")
+  @Operation(summary = "Generate optional AI analysis by SKU (ADMIN)")
+  public Analysis analysisBySku(
+      @PathVariable @Pattern(regexp = "[A-Z0-9][A-Z0-9._-]{0,63}") String sku) {
+    return ai.analyze(catalog.requireSku(sku).getId());
+  }
+
   @GetMapping("/{id}/reviews")
   public PageView<ReviewView> reviews(
       @PathVariable UUID id,
