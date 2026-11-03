@@ -215,3 +215,9 @@ Apagar volumes com `down -v` destrói os dados locais. Alterar `DB_PASSWORD` no 
 Por que cachear agregados? Por que invalidar após o commit ainda permite uma corrida? Como impor unicidade sob concorrência? Qual a diferença entre circuit breaker e timeout? Por que não repetir automaticamente uma chamada paga? Quando trocar offset por cursor? Como evoluir a identidade local para OIDC? As escolhas e próximos passos estão em [architecture.md](docs/architecture.md).
 
 Este projeto é uma implementação independente de demonstração. Não depende de serviços corporativos ou artefatos privados.
+
+## Integração com a PDP Aurora
+
+O [storefront-pdp](https://github.com/JeffeMartins/storefront-pdp) integra esta API ao catálogo de produtos e executa uma instância isolada, em banco e volumes próprios. Seu Compose ativa `SPRING_PROFILES_ACTIVE=demo`, adicionando cinco autores fictícios com papel `REVIEWER`: `demo-ana`, `demo-bruno`, `demo-carla`, `demo-diego` e `demo-elisa`.
+
+Esses usuários usam a senha local `REVIEWER_PASSWORD`, armazenada com BCrypt, e não existem no perfil padrão. O seed do storefront cria cinco avaliações distintas por HTTP, respeitando identidade e CSRF. Use esse seed no ambiente integrado; `scripts/seed-demo.ps1` continua sendo o cenário original de duas avaliações. Nenhum dado do banco original é apagado ou migrado automaticamente.
